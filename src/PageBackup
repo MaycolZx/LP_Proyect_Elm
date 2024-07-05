@@ -1,6 +1,7 @@
 module Page exposing (Msg, Page(..), init, subscriptions, update, view)
 
 import Page.About as About
+import Page.AvlTree2 as AvlTree2
 import Page.Contact as Contact
 import Page.Home as Home
 import Page.LoginH as LoginH
@@ -15,12 +16,13 @@ import Url exposing (Url)
 {-| Page
 -}
 type Page
-    = Home Home.Model
+    = Home
     | About
     | Contact Contact.Model
     | SecHome SecHome.Model
     | RegisterH RegisterH.Model
     | LoginH LoginH.Model
+    | AvlTree2 AvlTree2.Model
     | NotFound Url
 
 
@@ -31,7 +33,7 @@ type Msg
     | SecHomeMsg SecHome.Msg
     | RegisterHMsg RegisterH.Msg
     | LoginHMsg LoginH.Msg
-    | HomeMsg Home.Msg
+    | AvlTree2Msg AvlTree2.Msg
 
 
 {-| init
@@ -40,7 +42,7 @@ init : Route -> ( Page, Cmd Msg )
 init route =
     case route of
         Route.Home ->
-            ( Home Home.init, Cmd.none )
+            ( Home, Cmd.none )
 
         Route.About ->
             ( About, Cmd.none )
@@ -58,6 +60,14 @@ init route =
         Route.LoginH ->
             ( LoginH LoginH.init, Cmd.none )
 
+        Route.AvlTree2 ->
+            let
+                ( model, cmd ) =
+                    AvlTree2.init
+            in
+            ( AvlTree2 model, Cmd.map AvlTree2Msg cmd )
+
+        --     ( AvlTree2 AvlTree2.init, Cmd.none )
         -- SecHome.init ""
         --     |> Router.mapUpdate SecHome SecHomeMsg
         Route.NotFound url ->
@@ -102,48 +112,34 @@ update message page =
                 _ ->
                     ( page, Cmd.none )
 
-        HomeMsg msg ->
+        AvlTree2Msg msg ->
             case page of
-                Home mdl ->
-                    ( Home (Home.update msg mdl), Cmd.none )
+                AvlTree2 mdl ->
+                    let
+                        ( newModel, cmd ) =
+                            AvlTree2.update msg mdl
+                    in
+                    ( AvlTree2 newModel, Cmd.map AvlTree2Msg cmd )
 
                 _ ->
                     ( page, Cmd.none )
 
 
 
--- SecHomeMsg msg ->
+-- AvlTree2Msg msg ->
 --     case page of
---         SecHome mdl ->
---             ( SecHome (SecHome.update msg mdl), Cmd.none )
---         -- RegisterH mdl ->
---         --     ( RegisterH (RegisterH.update RegisterHMsg mdl), Cmd.none )
---         -- LoginH mdl ->
---         --     ( LoginH (LoginH.update msg mdl), Cmd.none )
---         _ ->
---             ( page, Cmd.none )
--- RegisterHMsg msga ->
---     case page of
---         RegisterH mdl ->
---             ( RegisterH (RegisterH.update msga mdl), Cmd.none )
---         _ ->
---             ( page, Cmd.none )
--- LoginHMsg msgl ->
---     case page of
---         LoginH mdl ->
---             ( LoginH (LoginH.update msgl mdl), Cmd.none )
+--         AvlTree2 mdl ->
+--             ( AvlTree2 (AvlTree2.update msg mdl), Cmd.none )
+--
 --         _ ->
 --             ( page, Cmd.none )
 
 
-{-| view
--}
 view : Page -> Layout Msg
 view page =
     case page of
-        Home mdl ->
-            Home.view mdl
-                |> Router.mapView HomeMsg
+        Home ->
+            Home.view
 
         About ->
             About.view
@@ -164,6 +160,10 @@ view page =
             LoginH.view mdl
                 |> Router.mapView LoginHMsg
 
+        AvlTree2 mdl ->
+            AvlTree2.view mdl
+                |> Router.mapView AvlTree2Msg
+
         NotFound url ->
             NotFound.view url
 
@@ -173,7 +173,7 @@ view page =
 subscriptions : Page -> Sub Msg
 subscriptions page =
     case page of
-        Home _ ->
+        Home ->
             Sub.none
 
         About ->
@@ -190,6 +190,9 @@ subscriptions page =
             Sub.none
 
         LoginH _ ->
+            Sub.none
+
+        AvlTree2 _ ->
             Sub.none
 
         NotFound _ ->
