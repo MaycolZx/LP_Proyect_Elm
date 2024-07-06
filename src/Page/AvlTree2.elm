@@ -1,7 +1,7 @@
 -- module Main exposing (..)
 
 
-module Page.AvlTree2 exposing (Model, Msg, init, update, view)
+module Page.AvlTree2 exposing (Model, Msg, init, subscriptions, update, view)
 
 import Browser
 import Browser.Dom as Dom

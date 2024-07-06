@@ -1,6 +1,7 @@
 module Page exposing (Msg, Page(..), init, subscriptions, update, view)
 
 import Page.About as About
+import Page.AvlTree2 as AvlTree2
 import Page.Contact as Contact
 import Page.Home as Home
 import Page.LoginH as LoginH
@@ -21,6 +22,7 @@ type Page
     | SecHome SecHome.Model
     | RegisterH RegisterH.Model
     | LoginH LoginH.Model
+    | AvlTree2 AvlTree2.Model
     | NotFound Url
 
 
@@ -32,6 +34,7 @@ type Msg
     | RegisterHMsg RegisterH.Msg
     | LoginHMsg LoginH.Msg
     | HomeMsg Home.Msg
+    | AvlTree2Msg AvlTree2.Msg
 
 
 {-| init
@@ -58,8 +61,13 @@ init route =
         Route.LoginH ->
             ( LoginH LoginH.init, Cmd.none )
 
-        -- SecHome.init ""
-        --     |> Router.mapUpdate SecHome SecHomeMsg
+        Route.AvlTree2 ->
+            let
+                ( model, cmd ) =
+                    AvlTree2.init ()
+            in
+            ( AvlTree2 model, Cmd.map AvlTree2Msg cmd )
+
         Route.NotFound url ->
             ( NotFound url, Cmd.none )
 
@@ -106,6 +114,18 @@ update message page =
             case page of
                 Home mdl ->
                     ( Home (Home.update msg mdl), Cmd.none )
+
+                _ ->
+                    ( page, Cmd.none )
+
+        AvlTree2Msg msg ->
+            case page of
+                AvlTree2 mdl ->
+                    let
+                        ( newModel, cmd ) =
+                            AvlTree2.update msg mdl
+                    in
+                    ( AvlTree2 newModel, Cmd.map AvlTree2Msg cmd )
 
                 _ ->
                     ( page, Cmd.none )
@@ -164,6 +184,10 @@ view page =
             LoginH.view mdl
                 |> Router.mapView LoginHMsg
 
+        AvlTree2 mdl ->
+            AvlTree2.view mdl
+                |> Router.mapView AvlTree2Msg
+
         NotFound url ->
             NotFound.view url
 
@@ -191,6 +215,10 @@ subscriptions page =
 
         LoginH _ ->
             Sub.none
+
+        AvlTree2 mdl ->
+            AvlTree2.subscriptions mdl
+                |> Sub.map AvlTree2Msg
 
         NotFound _ ->
             Sub.none

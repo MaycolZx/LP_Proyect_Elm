@@ -53,8 +53,8 @@ update msg toHome =
             { toHome | hoveredDiv = Nothing }
 
 
-styledDiv : String -> String -> Maybe String -> H.Html Msg
-styledDiv id titleCard hoveredDiv =
+styledDiv : String -> String -> String -> Maybe String -> H.Html Msg
+styledDiv id titleCard hrefAddr hoveredDiv =
     let
         isHovered =
             case hoveredDiv of
@@ -65,17 +65,17 @@ styledDiv id titleCard hoveredDiv =
                     False
     in
     H.div [ HA.style "margin" "0 auto" ]
-        [ otherDiv id titleCard isHovered ]
+        [ otherDiv id titleCard hrefAddr isHovered ]
 
 
-otherDiv : String -> String -> Bool -> H.Html Msg
-otherDiv id titleCard isHovered =
+otherDiv : String -> String -> String -> Bool -> H.Html Msg
+otherDiv id titleCard hrefAddr isHovered =
     let
         urlG =
             "https://visualgo.net/img/"
     in
     H.a
-        [ HA.href "/RegisterH"
+        [ HA.href hrefAddr
         , HA.style "color" "black"
         , HA.style "cursor" "pointer"
         , HA.style "width" "300px"
@@ -147,12 +147,12 @@ view toHome =
             -- H.div [ HA.style "display" "grid", HA.style "grid-template-rows" "1fr 5fr 1fr ", HA.style "margin" "20px" ]
             [ H.h1 [ HA.style "display" "flex", HA.style "justify-content" "center", HA.style "align-items" "center", HA.style "margin-top" "0", HA.style "margin-bottom" "0" ] [ H.text "VISU algo 2.0" ]
             , H.div [ HA.style "display" "grid", HA.style "grid-template-columns" "1fr 1fr", HA.style "gap" "20px" ]
-                [ styledDiv "sorting" "Primera D S" toHome.hoveredDiv
-                , styledDiv "list" "Segunda D S" toHome.hoveredDiv
-                , styledDiv "heap" "Tercer D S" toHome.hoveredDiv
-                , styledDiv "hashtable" "Cuarta D S" toHome.hoveredDiv
-                , styledDiv "bst" "Quinta D S" toHome.hoveredDiv
-                , styledDiv "graphds" "Sexta D S" toHome.hoveredDiv
+                [ styledDiv "sorting" "Primera D S" "/AvlTree2" toHome.hoveredDiv
+                , styledDiv "list" "Segunda D S" "/RegisterH" toHome.hoveredDiv
+                , styledDiv "heap" "Tercer D S" "/RegisterH" toHome.hoveredDiv
+                , styledDiv "hashtable" "Cuarta D S" "/RegisterH" toHome.hoveredDiv
+                , styledDiv "bst" "Quinta D S" "/RegisterH" toHome.hoveredDiv
+                , styledDiv "graphds" "Sexta D S" "/RegisterH" toHome.hoveredDiv
                 ]
             ]
         ]

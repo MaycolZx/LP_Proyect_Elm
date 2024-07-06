@@ -15,6 +15,7 @@ type Route
     | SecHome
     | RegisterH
     | LoginH
+    | AvlTree2
     | NotFound Url
 
 
@@ -26,6 +27,7 @@ parser =
         , Parser.map SecHome (Parser.s "SecHome")
         , Parser.map RegisterH (Parser.s "RegisterH")
         , Parser.map LoginH (Parser.s "LoginH")
+        , Parser.map AvlTree2 (Parser.s "AvlTree2")
         , Parser.map Contact (Parser.s "contact")
         ]
 
@@ -51,6 +53,9 @@ name route =
 
         LoginH ->
             Just "LoginH"
+
+        AvlTree2 ->
+            Just "AvlTree2"
 
         Contact ->
             Just "Contact"
