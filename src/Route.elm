@@ -17,6 +17,10 @@ type Route
     | LoginH
     | AvlTree2
     | NotFound Url
+    | LinkedL
+    | GraphL
+    | QueueL
+    | StackL
 
 
 parser : Parser (Route -> a) a
@@ -29,6 +33,10 @@ parser =
         , Parser.map LoginH (Parser.s "LoginH")
         , Parser.map AvlTree2 (Parser.s "AvlTree2")
         , Parser.map Contact (Parser.s "contact")
+        , Parser.map LinkedL (Parser.s "LinkedL")
+        , Parser.map GraphL (Parser.s "GraphL")
+        , Parser.map QueueL (Parser.s "QueueL")
+        , Parser.map StackL (Parser.s "StackL")
         ]
 
 
@@ -56,6 +64,18 @@ name route =
 
         AvlTree2 ->
             Just "AvlTree2"
+
+        LinkedL ->
+            Just "LinkedL"
+
+        GraphL ->
+            Just "GraphL"
+
+        QueueL ->
+            Just "QueueL"
+
+        StackL ->
+            Just "StackL"
 
         Contact ->
             Just "Contact"

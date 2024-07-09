@@ -4,365 +4,624 @@
 module Page.AvlTree2 exposing (Model, Msg, init, subscriptions, update, view)
 
 import Browser
-import Browser.Dom as Dom
-import Html exposing (Html, button, div, input, text)
-import Html.Attributes exposing (placeholder, value)
-import Html.Events exposing (onClick, onInput)
-import Process
+import Html exposing (..)
+import Html.Attributes exposing (..)
+import Html.Events exposing (..)
 import Router exposing (Layout)
 import Svg exposing (..)
-import Svg.Attributes exposing (..)
-import Task
+import Svg.Attributes as SvgAttr
+import Time
 
 
 
--- MAIN
--- main =
---     Browser.element { init = init, update = update, subscriptions = subscriptions, view = view }
--- TREE
-
-
-type BinaryTree
-    = Nil
-    | Node BinaryTree Int Int BinaryTree
-
-
-heightT : BinaryTree -> Int
-heightT tree =
-    case tree of
-        Nil ->
-            0
-
-        Node _ _ h _ ->
-            h
-
-
-updateHeight : BinaryTree -> BinaryTree
-updateHeight tree =
-    case tree of
-        Nil ->
-            Nil
-
-        Node left value _ right ->
-            Node left value (1 + Basics.max (heightT left) (heightT right)) right
-
-
-balanceFactor : BinaryTree -> Int
-balanceFactor tree =
-    case tree of
-        Nil ->
-            0
-
-        Node left _ _ right ->
-            heightT left - heightT right
-
-
-rotateLeft : BinaryTree -> ( BinaryTree, List Operation )
-rotateLeft tree =
-    case tree of
-        Node left value h (Node rightLeft rightValue _ rightRight) ->
-            ( Node (Node left value h rightLeft) rightValue (1 + Basics.max (heightT (Node left value h rightLeft)) (heightT rightRight)) rightRight, [ RotateLeft value ] )
-
-        _ ->
-            ( tree, [] )
-
-
-rotateRight : BinaryTree -> ( BinaryTree, List Operation )
-rotateRight tree =
-    case tree of
-        Node (Node leftLeft leftValue _ leftRight) value h right ->
-            ( Node leftLeft leftValue (1 + Basics.max (heightT leftLeft) (heightT (Node leftRight value h right))) (Node leftRight value h right), [ RotateRight value ] )
-
-        _ ->
-            ( tree, [] )
-
-
-balance : BinaryTree -> ( BinaryTree, List Operation )
-balance tree =
-    let
-        ( balancedTree, ops ) =
-            case tree of
-                Nil ->
-                    ( Nil, [] )
-
-                Node left value h right ->
-                    if balanceFactor tree > 1 then
-                        if balanceFactor left < 0 then
-                            let
-                                ( newLeft, leftOps ) =
-                                    rotateLeft left
-
-                                ( newTree, rightOps ) =
-                                    rotateRight (Node newLeft value h right)
-                            in
-                            ( newTree, leftOps ++ rightOps )
-
-                        else
-                            let
-                                ( newTree, rotateOps ) =
-                                    rotateRight tree
-                            in
-                            ( newTree, rotateOps )
-
-                    else if balanceFactor tree < -1 then
-                        if balanceFactor right > 0 then
-                            let
-                                ( newRight, rightOps ) =
-                                    rotateRight right
-
-                                ( newTree, leftOps ) =
-                                    rotateLeft (Node left value h newRight)
-                            in
-                            ( newTree, rightOps ++ leftOps )
-
-                        else
-                            let
-                                ( newTree, rotateOps ) =
-                                    rotateLeft tree
-                            in
-                            ( newTree, rotateOps )
-
-                    else
-                        ( tree, [] )
-    in
-    ( updateHeight balancedTree, ops )
-
-
-insert : Int -> BinaryTree -> ( BinaryTree, List Operation )
-insert node tree =
-    case tree of
-        Nil ->
-            ( Node Nil node 1 Nil, [ Insert node ] )
-
-        Node left value h right ->
-            if node < value then
-                let
-                    ( newLeft, leftOps ) =
-                        insert node left
-
-                    ( balancedTree, balanceOps ) =
-                        balance (Node newLeft value h right)
-                in
-                ( balancedTree, leftOps ++ balanceOps )
-
-            else if node > value then
-                let
-                    ( newRight, rightOps ) =
-                        insert node right
-
-                    ( balancedTree, balanceOps ) =
-                        balance (Node left value h newRight)
-                in
-                ( balancedTree, rightOps ++ balanceOps )
-
-            else
-                ( tree, [] )
-
-
-
--- MODEL
+-- MODELO
 
 
 type alias Model =
-    { content : String
-    , tree : BinaryTree
-    , operations : List Operation
-    , currentOperation : Maybe Operation
+    { tree : Tree
     , animating : Bool
+    , insertValue : String
+    , deleteValue : String
+    , findValue : String
+    , searchActive : Bool
+    }
+
+
+type Tree
+    = Empty
+    | Node NodeData
+
+
+type alias NodeData =
+    { value : Int
+    , height : Int
+    , x : Float
+    , y : Float
+    , targetX : Float
+    , targetY : Float
+    , left : Tree
+    , right : Tree
+    , inSearchPath : Bool
     }
 
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( { content = ""
-      , tree = Nil
-      , operations = []
-      , currentOperation = Nothing
+    ( { tree = Empty
       , animating = False
+      , insertValue = ""
+      , deleteValue = ""
+      , findValue = ""
+      , searchActive = False
       }
     , Cmd.none
     )
 
 
 
--- UPDATE
+-- ACTUALIZACIÓN
 
 
 type Msg
-    = Change String
-    | AddToTree
-    | NextOperation
-    | StartAnimation
+    = InsertNode
+    | DeleteNode
+    | Tick Time.Posix
+    | FindNode
+    | UpdateInsertInput String
+    | UpdateDeleteInput String
+    | UpdateFindInput String
+    | ResetTree
+
+
+type alias SearchResult =
+    { found : Maybe Int
+    , path : List Int
+    }
+
+
+find : Int -> Tree -> SearchResult
+find value tree =
+    findHelper value tree []
+
+
+findHelper : Int -> Tree -> List Int -> SearchResult
+findHelper value tree path =
+    case tree of
+        Empty ->
+            { found = Nothing, path = [] }
+
+        Node node ->
+            if value == node.value then
+                { found = Just node.value, path = path }
+
+            else if value < node.value then
+                findHelper value node.left (path ++ [ node.value ])
+
+            else
+                findHelper value node.right (path ++ [ node.value ])
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        Change newContent ->
-            ( { model | content = newContent }
-            , Cmd.none
-            )
-
-        AddToTree ->
-            case String.toInt model.content of
-                Just val ->
+        InsertNode ->
+            case String.toInt model.insertValue of
+                Just value ->
                     let
-                        ( newTree, ops ) =
-                            insert val model.tree
+                        newTree =
+                            insert value model.tree
+
+                        ( repositionedTree, _ ) =
+                            repositionTree newTree 150 50 100
                     in
-                    ( { model | tree = newTree, content = "", operations = ops, currentOperation = Nothing, animating = True }
-                    , Cmd.batch [ Process.sleep 500 |> Task.perform (\_ -> NextOperation) ]
-                    )
+                    ( { model | tree = repositionedTree, animating = True, insertValue = "", searchActive = False }, Cmd.none )
 
                 Nothing ->
                     ( model, Cmd.none )
 
-        NextOperation ->
-            case model.operations of
-                [] ->
-                    ( { model | animating = False }
-                    , Cmd.none
-                    )
+        DeleteNode ->
+            case String.toInt model.deleteValue of
+                Just value ->
+                    let
+                        newTree =
+                            delete value model.tree
 
-                op :: ops ->
-                    ( { model | currentOperation = Just op, operations = ops }
-                    , Process.sleep 500 |> Task.perform (\_ -> NextOperation)
-                    )
+                        ( repositionedTree, _ ) =
+                            repositionTree newTree 150 50 100
+                    in
+                    ( { model | tree = repositionedTree, animating = True, deleteValue = "", searchActive = False }, Cmd.none )
 
-        StartAnimation ->
-            ( model
-            , Process.sleep 500 |> Task.perform (\_ -> NextOperation)
-            )
+                Nothing ->
+                    ( model, Cmd.none )
+
+        FindNode ->
+            case String.toInt model.findValue of
+                Just value ->
+                    let
+                        searchResult =
+                            find value model.tree
+
+                        newTree =
+                            case searchResult.found of
+                                Just _ ->
+                                    markSearchPath model.tree searchResult.path (Just value)
+
+                                Nothing ->
+                                    model.tree
+                    in
+                    ( { model | tree = newTree, findValue = "", searchActive = True }, Cmd.none )
+
+                Nothing ->
+                    ( model, Cmd.none )
+
+        ResetTree ->
+            init ()
+
+        UpdateFindInput newValue ->
+            ( { model | findValue = newValue }, Cmd.none )
+
+        Tick _ ->
+            if model.animating then
+                let
+                    ( newTree, stillAnimating ) =
+                        updateTreePositions model.tree
+                in
+                ( { model | tree = newTree, animating = stillAnimating }, Cmd.none )
+
+            else
+                ( model, Cmd.none )
+
+        UpdateInsertInput newValue ->
+            ( { model | insertValue = newValue }, Cmd.none )
+
+        UpdateDeleteInput newValue ->
+            ( { model | deleteValue = newValue }, Cmd.none )
 
 
 
--- VIEW
+--FOR FINDING A NODE
+
+
+markSearchPath : Tree -> List Int -> Maybe Int -> Tree
+markSearchPath tree path foundValue =
+    case tree of
+        Empty ->
+            Empty
+
+        Node node ->
+            if Just node.value == foundValue then
+                Node { node | inSearchPath = True, left = markSearchPath node.left path foundValue, right = markSearchPath node.right path foundValue }
+
+            else if List.member node.value path then
+                Node { node | inSearchPath = True, left = markSearchPath node.left path foundValue, right = markSearchPath node.right path foundValue }
+
+            else
+                Node { node | inSearchPath = False, left = markSearchPath node.left path foundValue, right = markSearchPath node.right path foundValue }
+
+
+
+--AVL FUNCTIONS
+
+
+height : Tree -> Int
+height tree =
+    case tree of
+        Empty ->
+            0
+
+        Node node ->
+            node.height
+
+
+balanceFactor : Tree -> Int
+balanceFactor tree =
+    case tree of
+        Empty ->
+            0
+
+        Node node ->
+            height node.left - height node.right
+
+
+updateHeight : NodeData -> NodeData
+updateHeight node =
+    { node | height = 1 + Basics.max (height node.left) (height node.right) }
+
+
+rotateRight : NodeData -> Tree
+rotateRight y =
+    case y.left of
+        Node x ->
+            Node
+                { x
+                    | right = Node { y | left = x.right, height = 1 + Basics.max (height x.right) (height y.right) }
+                    , height = 1 + Basics.max (height x.left) (height y.right)
+                    , targetX = y.targetX
+                    , targetY = y.targetY
+                }
+
+        Empty ->
+            Node y
+
+
+rotateLeft : NodeData -> Tree
+rotateLeft x =
+    case x.right of
+        Node y ->
+            Node
+                { y
+                    | left = Node { x | right = y.left, height = 1 + Basics.max (height x.left) (height y.left) }
+                    , height = 1 + Basics.max (height y.right) (height x.left)
+                    , targetX = x.targetX
+                    , targetY = x.targetY
+                }
+
+        Empty ->
+            Node x
+
+
+balance : NodeData -> Tree
+balance node =
+    let
+        newNode =
+            updateHeight node
+    in
+    if balanceFactor (Node newNode) > 1 then
+        case newNode.left of
+            Node left ->
+                if balanceFactor newNode.left <= -1 then
+                    rotateRight { newNode | left = rotateLeft left }
+
+                else
+                    rotateRight newNode
+
+            Empty ->
+                Node newNode
+
+    else if balanceFactor (Node newNode) < -1 then
+        case newNode.right of
+            Node right ->
+                if balanceFactor newNode.right >= 1 then
+                    rotateLeft { newNode | right = rotateRight right }
+
+                else
+                    rotateLeft newNode
+
+            Empty ->
+                Node newNode
+
+    else
+        Node newNode
+
+
+insert : Int -> Tree -> Tree
+insert value tree =
+    case tree of
+        Empty ->
+            Node { value = value, height = 1, x = 150, y = 50, targetX = 150, targetY = 50, left = Empty, right = Empty, inSearchPath = False }
+
+        Node node ->
+            if value < node.value then
+                balance { node | left = insert value node.left }
+
+            else if value > node.value then
+                balance { node | right = insert value node.right }
+
+            else
+                Node node
+
+
+delete : Int -> Tree -> Tree
+delete value tree =
+    case tree of
+        Empty ->
+            Empty
+
+        Node node ->
+            if value < node.value then
+                balance { node | left = delete value node.left }
+
+            else if value > node.value then
+                balance { node | right = delete value node.right }
+
+            else
+                case ( node.left, node.right ) of
+                    ( Empty, Empty ) ->
+                        Empty
+
+                    ( left, Empty ) ->
+                        left
+
+                    ( Empty, right ) ->
+                        right
+
+                    ( _, _ ) ->
+                        let
+                            ( minValue, newRight ) =
+                                removeMin node.right
+
+                            newNode =
+                                { node | value = minValue, right = newRight }
+                        in
+                        balance newNode
+
+
+removeMin : Tree -> ( Int, Tree )
+removeMin tree =
+    case tree of
+        Empty ->
+            ( 0, Empty )
+
+        -- This should never happen in a valid BST
+        Node node ->
+            case node.left of
+                Empty ->
+                    ( node.value, node.right )
+
+                _ ->
+                    let
+                        ( minValue, newLeft ) =
+                            removeMin node.left
+                    in
+                    ( minValue, balance { node | left = newLeft } )
+
+
+repositionTree : Tree -> Float -> Float -> Float -> ( Tree, Float )
+repositionTree tree x y horizontalSpacing =
+    case tree of
+        Empty ->
+            ( Empty, x )
+
+        Node node ->
+            let
+                ( leftTree, leftX ) =
+                    repositionTree node.left (x - horizontalSpacing) (y + 50) (horizontalSpacing / 2)
+
+                ( rightTree, rightX ) =
+                    repositionTree node.right (x + horizontalSpacing) (y + 50) (horizontalSpacing / 2)
+
+                newX =
+                    (leftX + rightX) / 2
+            in
+            ( Node { node | targetX = newX, targetY = y, left = leftTree, right = rightTree }, newX )
+
+
+updateTreePositions : Tree -> ( Tree, Bool )
+updateTreePositions tree =
+    case tree of
+        Empty ->
+            ( Empty, False )
+
+        Node node ->
+            let
+                ( newLeft, leftAnimating ) =
+                    updateTreePositions node.left
+
+                ( newRight, rightAnimating ) =
+                    updateTreePositions node.right
+
+                ( newX, newY, nodeAnimating ) =
+                    updatePosition node.x node.y node.targetX node.targetY
+
+                newNode =
+                    { node | x = newX, y = newY, left = newLeft, right = newRight }
+            in
+            ( Node newNode, leftAnimating || rightAnimating || nodeAnimating )
+
+
+updatePosition : Float -> Float -> Float -> Float -> ( Float, Float, Bool )
+updatePosition x y targetX targetY =
+    let
+        step =
+            2
+
+        newX =
+            moveTowards x targetX step
+
+        newY =
+            moveTowards y targetY step
+
+        stillAnimating =
+            (abs (x - targetX) > 0.1) || (abs (y - targetY) > 0.1)
+    in
+    ( newX, newY, stillAnimating )
+
+
+moveTowards : Float -> Float -> Float -> Float
+moveTowards current target step =
+    if abs (current - target) < step then
+        target
+
+    else if current < target then
+        current + step
+
+    else
+        current - step
+
+
+
+-- VISTA
 
 
 view : Model -> Layout Msg
 view model =
+    let
+        containerStyle =
+            [ Html.Attributes.style "font-family" "Arial, sans-serif"
+            , Html.Attributes.style "max-width" "800px"
+            , Html.Attributes.style "margin" "20px auto"
+            , Html.Attributes.style "padding" "20px"
+            , Html.Attributes.style "background-color" "#f9f9f9"
+            , Html.Attributes.style "border-radius" "8px"
+            , Html.Attributes.style "box-shadow" "0 2px 4px rgba(0,0,0,0.1)"
+            ]
+
+        inputStyle =
+            [ Html.Attributes.style "padding" "8px"
+            , Html.Attributes.style "margin-right" "10px"
+            , Html.Attributes.style "border" "1px solid #ccc"
+            , Html.Attributes.style "border-radius" "4px"
+            , Html.Attributes.style "font-size" "14px"
+            , Html.Attributes.style "width" "150px"
+            ]
+
+        buttonStyle =
+            [ Html.Attributes.style "padding" "8px 12px"
+            , Html.Attributes.style "background-color" "#4CAF50"
+            , Html.Attributes.style "color" "white"
+            , Html.Attributes.style "border" "none"
+            , Html.Attributes.style "border-radius" "4px"
+            , Html.Attributes.style "cursor" "pointer"
+            , Html.Attributes.style "font-size" "14px"
+            , Html.Attributes.style "transition" "background-color 0.3s"
+            ]
+
+        resetButtonStyle =
+            buttonStyle ++ [ Html.Attributes.style "background-color" "#e74c3c" ]
+
+        inputGroupStyle =
+            [ Html.Attributes.style "margin-bottom" "15px"
+            , Html.Attributes.style "display" "flex"
+            , Html.Attributes.style "align-items" "center"
+            ]
+
+        svgContainerStyle =
+            [ Html.Attributes.style "border" "2px solid #ddd"
+            , Html.Attributes.style "border-radius" "8px"
+            , Html.Attributes.style "margin-top" "20px"
+            , Html.Attributes.style "background-color" "#fff"
+            ]
+    in
     { title = Nothing
     , attrs = []
     , main =
-        [ div []
-            [ input [ placeholder "Enter number", value model.content, onInput Change ] []
-            , button [ onClick AddToTree ] [ Html.text "Add to Tree" ]
-            , div [] [ renderTree model.tree model.currentOperation ]
-            , if model.animating then
-                button [ onClick NextOperation ] [ Html.text "Next Operation" ]
-
-              else
-                Html.text ""
+        [ div containerStyle
+            [ h1 [ Html.Attributes.style "color" "#333", Html.Attributes.style "text-align" "center" ] [ Html.text "Visualizador de AVL" ]
+            , div inputGroupStyle
+                [ input ([ type_ "text", placeholder "Valor a insertar", value model.insertValue, onInput UpdateInsertInput ] ++ inputStyle) []
+                , button (onClick InsertNode :: buttonStyle) [ Html.text "Insertar nodo" ]
+                ]
+            , div inputGroupStyle
+                [ input ([ type_ "text", placeholder "Valor a borrar", value model.deleteValue, onInput UpdateDeleteInput ] ++ inputStyle) []
+                , button (onClick DeleteNode :: buttonStyle) [ Html.text "Borrar nodo" ]
+                ]
+            , div inputGroupStyle
+                [ input ([ type_ "text", placeholder "Valor a buscar", value model.findValue, onInput UpdateFindInput ] ++ inputStyle) []
+                , button (onClick FindNode :: buttonStyle) [ Html.text "Buscar nodo" ]
+                ]
+            , div inputGroupStyle
+                [ button (onClick ResetTree :: resetButtonStyle) [ Html.text "Reiniciar árbol" ]
+                ]
+            , div svgContainerStyle
+                [ svg
+                    [ SvgAttr.width "100%"
+                    , SvgAttr.height "500"
+                    , SvgAttr.viewBox "0 0 600 500" -- Aumentado el ancho del viewBox
+                    ]
+                    [ g [ SvgAttr.transform "translate(150,0)" ]
+                        [ drawTree model.searchActive model.tree ]
+                    ]
+                ]
             ]
         ]
     }
 
 
-
--- div []
---     [ input [ placeholder "Enter number", value model.content, onInput Change ] []
---     , button [ onClick AddToTree ] [ Html.text "Add to Tree" ]
---     , div [] [ renderTree model.tree model.currentOperation ]
---     , if model.animating then
---         button [ onClick NextOperation ] [ Html.text "Next Operation" ]
---
---       else
---         Html.text ""
---     ]
--- DRAW TREE
-
-
-type Operation
-    = Insert Int
-    | RotateLeft Int
-    | RotateRight Int
-
-
-drawTree : BinaryTree -> Maybe Operation -> Float -> Float -> Float -> List (Svg msg)
-drawTree tree currentOperation x y offset =
+drawTree : Bool -> Tree -> Svg Msg
+drawTree searchActive tree =
     case tree of
-        Nil ->
-            []
+        Empty ->
+            Svg.g [] []
 
-        Node left leaf _ right ->
-            drawLines tree x y offset
-                ++ drawNodes tree currentOperation x y offset
+        Node node ->
+            let
+                ( fillColor, strokeColor ) =
+                    if searchActive && node.inSearchPath then
+                        if Just node.value == (find node.value tree).found then
+                            ( "#e74c3c", "#c0392b" )
 
-
-drawLines : BinaryTree -> Float -> Float -> Float -> List (Svg msg)
-drawLines tree x y offset =
-    case tree of
-        Nil ->
-            []
-
-        Node left leaf _ right ->
-            drawLine ( x, y ) ( x - offset, y + 60 )
-                ++ drawLine ( x, y ) ( x + offset, y + 60 )
-                ++ drawLines left (x - offset) (y + 60) (offset / 2)
-                ++ drawLines right (x + offset) (y + 60) (offset / 2)
-
-
-drawNodes : BinaryTree -> Maybe Operation -> Float -> Float -> Float -> List (Svg msg)
-drawNodes tree currentOperation x y offset =
-    case tree of
-        Nil ->
-            []
-
-        Node left leaf _ right ->
-            [ drawNode x y leaf currentOperation ]
-                ++ drawNodes left currentOperation (x - offset) (y + 60) (offset / 2)
-                ++ drawNodes right currentOperation (x + offset) (y + 60) (offset / 2)
-
-
-drawNode : Float -> Float -> Int -> Maybe Operation -> Svg msg
-drawNode x y leaf currentOperation =
-    let
-        color =
-            case currentOperation of
-                Just (Insert n) ->
-                    if n == leaf then
-                        "green"
+                        else
+                            ( "#f39c12", "#d35400" )
 
                     else
-                        "red"
-
-                Just (RotateLeft n) ->
-                    if n == leaf then
-                        "blue"
-
-                    else
-                        "red"
-
-                Just (RotateRight n) ->
-                    if n == leaf then
-                        "blue"
-
-                    else
-                        "red"
-
-                Nothing ->
-                    "red"
-    in
-    g []
-        [ circle [ cx (String.fromFloat x), cy (String.fromFloat y), r "20", fill color ] []
-        , text_ [ Svg.Attributes.x (String.fromFloat (x - 10)), Svg.Attributes.y (String.fromFloat (y + 5)), fill "white", fontSize "15" ] [ Svg.text (String.fromInt leaf) ]
-        ]
-
-
-drawLine : ( Float, Float ) -> ( Float, Float ) -> List (Svg msg)
-drawLine ( x1, y1 ) ( x2, y2 ) =
-    [ line [ Svg.Attributes.x1 (String.fromFloat x1), Svg.Attributes.y1 (String.fromFloat y1), Svg.Attributes.x2 (String.fromFloat x2), Svg.Attributes.y2 (String.fromFloat y2), stroke "black", strokeWidth "2" ] [] ]
+                        ( "#3498db", "#2980b9" )
+            in
+            Svg.g []
+                ([ drawNodeLines node
+                 , Svg.circle
+                    [ SvgAttr.cx (String.fromFloat node.x)
+                    , SvgAttr.cy (String.fromFloat node.y)
+                    , SvgAttr.r "20"
+                    , SvgAttr.fill fillColor
+                    , SvgAttr.stroke strokeColor
+                    , SvgAttr.strokeWidth "2"
+                    ]
+                    []
+                 , Svg.text_
+                    [ SvgAttr.x (String.fromFloat node.x)
+                    , SvgAttr.y (String.fromFloat node.y)
+                    , SvgAttr.textAnchor "middle"
+                    , SvgAttr.dominantBaseline "central"
+                    , SvgAttr.fill "white"
+                    , SvgAttr.fontSize "14"
+                    , SvgAttr.fontWeight "bold"
+                    ]
+                    [ Svg.text (String.fromInt node.value) ]
+                 ]
+                    ++ List.map (drawTree searchActive) [ node.left, node.right ]
+                )
 
 
-renderTree : BinaryTree -> Maybe Operation -> Svg msg
-renderTree tree currentOperation =
-    svg [ width "800", height "600" ] (drawTree tree currentOperation 400 50 200)
+drawNodeLines : NodeData -> Svg Msg
+drawNodeLines node =
+    Svg.g []
+        (List.filterMap identity
+            [ drawLineToChild node node.left
+            , drawLineToChild node node.right
+            ]
+        )
 
 
+drawLineToChild : NodeData -> Tree -> Maybe (Svg Msg)
+drawLineToChild parent child =
+    case child of
+        Empty ->
+            Nothing
 
--- SUBSCRIPTIONS
+        Node childNode ->
+            Just
+                (Svg.line
+                    [ SvgAttr.x1 (String.fromFloat parent.x)
+                    , SvgAttr.y1 (String.fromFloat parent.y)
+                    , SvgAttr.x2 (String.fromFloat childNode.x)
+                    , SvgAttr.y2 (String.fromFloat childNode.y)
+                    , SvgAttr.stroke "#34495e"
+                    , SvgAttr.strokeWidth "2"
+                    ]
+                    []
+                )
+
+
+getNodeX : Tree -> Float
+getNodeX tree =
+    case tree of
+        Empty ->
+            0
+
+        Node node ->
+            node.x
+
+
+getNodeY : Tree -> Float
+getNodeY tree =
+    case tree of
+        Empty ->
+            0
+
+        Node node ->
+            node.y
 
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
-    Sub.none
+    Time.every 16 Tick

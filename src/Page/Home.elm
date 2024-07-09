@@ -113,29 +113,34 @@ otherDiv id titleCard hrefAddr isHovered =
         ]
 
 
+secondOption : String -> String -> String -> Maybe String -> H.Html Msg
+secondOption idURL titleCard hrefAddr hoveredDiv =
+    H.div [ HA.style "margin" "0 auto" ]
+        [ H.a
+            [ HA.href hrefAddr
+            , HA.style "color" "black"
+            , HA.style "cursor" "pointer"
+            , HA.style "width" "300px"
+            , HA.style "height" "300px"
+            , HA.style "border" "1px solid #000"
+            , HA.style "display" "flex"
+            , HA.style "flex-direction" "column"
 
--- otherDiv : String -> String -> H.Html msg
--- otherDiv url titleCard =
---     let
---         urlG =
---             "https://visualgo.net/img/"
---     in
---     H.div []
---         [ H.a [ HA.style "width" "300px", HA.style "height" "300px", HA.style "border" "1px solid #000", HA.style "display" "flex", HA.style "justify-content" "center", HA.style "align-items" "center" ]
---             [ H.img [ HA.style "display" "block", HA.style "", HA.src "./assets/images/bst.png", HA.alt "Static-Image" ] []
---             , H.img [ HA.style "display" "none", HA.src (String.concat [ urlG, "gif/", url, ".gif" ]), HA.alt "please wait" ]
---                 []
---             , H.h2
---                 []
---                 [ H.text titleCard ]
---             , H.div [ HA.style "cursor" "pointer", HA.style "opacity" "1", HA.style "backface-visibility" "hidden", HA.style "background-image" "./assets/images/bst.png" ] [ H.text "oo" ]
---             ]
---         ]
--- S.svg [ HA.style "width" "100px", HA.style "height" "50px", HA.class "animated-svg" ]
---     [ H.text
---         [ HA.style "font-size" "24px", HA.style "fill" "black", HA.style "opacity" "0" ]
---         [ H.text "Animated Text" ]
---     ]
+            -- , HA.style "justify-content" "center"
+            -- , HA.style "align-items" "center"
+            , HA.style "overflow" "hidden"
+            ]
+            [ H.img
+                [ HA.style "width" "100%"
+                , HA.style "height" "100%"
+                , HA.style "object-fit" "contain"
+                , src idURL
+                , alt "Animated-Image"
+                ]
+                []
+            , H.h2 [ HA.style "font-family" "Roboto,sans-serif", HA.style "margin" "0 auto" ] [ H.text titleCard ]
+            ]
+        ]
 
 
 view : Model -> Layout Msg
@@ -147,12 +152,12 @@ view toHome =
             -- H.div [ HA.style "display" "grid", HA.style "grid-template-rows" "1fr 5fr 1fr ", HA.style "margin" "20px" ]
             [ H.h1 [ HA.style "display" "flex", HA.style "justify-content" "center", HA.style "align-items" "center", HA.style "margin-top" "0", HA.style "margin-bottom" "0" ] [ H.text "VISU algo 2.0" ]
             , H.div [ HA.style "display" "grid", HA.style "grid-template-columns" "1fr 1fr", HA.style "gap" "20px" ]
-                [ styledDiv "sorting" "Primera D S" "/AvlTree2" toHome.hoveredDiv
-                , styledDiv "list" "Segunda D S" "/RegisterH" toHome.hoveredDiv
-                , styledDiv "heap" "Tercer D S" "/RegisterH" toHome.hoveredDiv
-                , styledDiv "hashtable" "Cuarta D S" "/RegisterH" toHome.hoveredDiv
-                , styledDiv "bst" "Quinta D S" "/RegisterH" toHome.hoveredDiv
-                , styledDiv "graphds" "Sexta D S" "/RegisterH" toHome.hoveredDiv
+                [ styledDiv "sorting" "Sort" "/AvlTree2" toHome.hoveredDiv
+                , styledDiv "list" "Linked-List" "/LinkedL" toHome.hoveredDiv
+                , secondOption "https://www.scaler.com/topics/images/stack-operations-in-data-structure_thumbnail.webp" "Stack" "/StackL" toHome.hoveredDiv
+                , secondOption "https://talentbattle.in/Files/C4U_Images/C4U_CKEDITOR_IMAGES/IMG10952_IMG10379_Queue1.png" "Queue" "/QueueL" toHome.hoveredDiv
+                , styledDiv "bst" "AVL-Tree" "/AvlTree2" toHome.hoveredDiv
+                , styledDiv "graphds" "Grafo" "/GraphL" toHome.hoveredDiv
                 ]
             ]
         ]

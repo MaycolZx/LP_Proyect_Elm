@@ -3,11 +3,15 @@ module Page exposing (Msg, Page(..), init, subscriptions, update, view)
 import Page.About as About
 import Page.AvlTree2 as AvlTree2
 import Page.Contact as Contact
+import Page.GraphL as GraphL
 import Page.Home as Home
+import Page.LinkedL as LinkedL
 import Page.LoginH as LoginH
 import Page.NotFound as NotFound
+import Page.QueueL as QueueL
 import Page.RegisterH as RegisterH
 import Page.SecHome as SecHome
+import Page.StackL as StackL
 import Route exposing (Route(..))
 import Router exposing (Layout)
 import Url exposing (Url)
@@ -24,6 +28,10 @@ type Page
     | LoginH LoginH.Model
     | AvlTree2 AvlTree2.Model
     | NotFound Url
+    | LinkedL LinkedL.Model
+    | GraphL GraphL.Model
+    | QueueL QueueL.Model
+    | StackL StackL.Model
 
 
 {-| Msg
@@ -35,6 +43,10 @@ type Msg
     | LoginHMsg LoginH.Msg
     | HomeMsg Home.Msg
     | AvlTree2Msg AvlTree2.Msg
+    | LinkedLMsg LinkedL.Msg
+    | GraphLMsg GraphL.Msg
+    | QueueLMsg QueueL.Msg
+    | StackLMsg StackL.Msg
 
 
 {-| init
@@ -67,6 +79,34 @@ init route =
                     AvlTree2.init ()
             in
             ( AvlTree2 model, Cmd.map AvlTree2Msg cmd )
+
+        Route.LinkedL ->
+            let
+                ( model, cmd ) =
+                    LinkedL.init ()
+            in
+            ( LinkedL model, Cmd.map LinkedLMsg cmd )
+
+        Route.GraphL ->
+            let
+                ( model, cmd ) =
+                    GraphL.init ()
+            in
+            ( GraphL model, Cmd.map GraphLMsg cmd )
+
+        Route.QueueL ->
+            let
+                ( model, cmd ) =
+                    QueueL.init ()
+            in
+            ( QueueL model, Cmd.map QueueLMsg cmd )
+
+        Route.StackL ->
+            let
+                ( model, cmd ) =
+                    StackL.init ()
+            in
+            ( StackL model, Cmd.map StackLMsg cmd )
 
         Route.NotFound url ->
             ( NotFound url, Cmd.none )
@@ -130,6 +170,54 @@ update message page =
                 _ ->
                     ( page, Cmd.none )
 
+        LinkedLMsg msg ->
+            case page of
+                LinkedL mdl ->
+                    let
+                        ( newModel, cmd ) =
+                            LinkedL.update msg mdl
+                    in
+                    ( LinkedL newModel, Cmd.map LinkedLMsg cmd )
+
+                _ ->
+                    ( page, Cmd.none )
+
+        GraphLMsg msg ->
+            case page of
+                GraphL mdl ->
+                    let
+                        ( newModel, cmd ) =
+                            GraphL.update msg mdl
+                    in
+                    ( GraphL newModel, Cmd.map GraphLMsg cmd )
+
+                _ ->
+                    ( page, Cmd.none )
+
+        QueueLMsg msg ->
+            case page of
+                QueueL mdl ->
+                    let
+                        ( newModel, cmd ) =
+                            QueueL.update msg mdl
+                    in
+                    ( QueueL newModel, Cmd.map QueueLMsg cmd )
+
+                _ ->
+                    ( page, Cmd.none )
+
+        StackLMsg msg ->
+            case page of
+                StackL mdl ->
+                    let
+                        ( newModel, cmd ) =
+                            StackL.update msg mdl
+                    in
+                    ( StackL newModel, Cmd.map StackLMsg cmd )
+
+                _ ->
+                    ( page, Cmd.none )
+
 
 
 -- SecHomeMsg msg ->
@@ -188,6 +276,22 @@ view page =
             AvlTree2.view mdl
                 |> Router.mapView AvlTree2Msg
 
+        LinkedL mdl ->
+            LinkedL.view mdl
+                |> Router.mapView LinkedLMsg
+
+        GraphL mdl ->
+            GraphL.view mdl
+                |> Router.mapView GraphLMsg
+
+        QueueL mdl ->
+            QueueL.view mdl
+                |> Router.mapView QueueLMsg
+
+        StackL mdl ->
+            StackL.view mdl
+                |> Router.mapView StackLMsg
+
         NotFound url ->
             NotFound.view url
 
@@ -219,6 +323,22 @@ subscriptions page =
         AvlTree2 mdl ->
             AvlTree2.subscriptions mdl
                 |> Sub.map AvlTree2Msg
+
+        LinkedL mdl ->
+            LinkedL.subscriptions mdl
+                |> Sub.map LinkedLMsg
+
+        GraphL mdl ->
+            GraphL.subscriptions mdl
+                |> Sub.map GraphLMsg
+
+        QueueL mdl ->
+            QueueL.subscriptions mdl
+                |> Sub.map QueueLMsg
+
+        StackL mdl ->
+            StackL.subscriptions mdl
+                |> Sub.map StackLMsg
 
         NotFound _ ->
             Sub.none
