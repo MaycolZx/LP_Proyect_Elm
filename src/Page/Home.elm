@@ -152,8 +152,7 @@ view toHome =
             -- H.div [ HA.style "display" "grid", HA.style "grid-template-rows" "1fr 5fr 1fr ", HA.style "margin" "20px" ]
             [ H.h1 [ HA.style "display" "flex", HA.style "justify-content" "center", HA.style "align-items" "center", HA.style "margin-top" "0", HA.style "margin-bottom" "0" ] [ H.text "VISU algo 2.0" ]
             , H.div [ HA.style "display" "grid", HA.style "grid-template-columns" "1fr 1fr", HA.style "gap" "20px" ]
-                [ styledDiv "sorting" "Sort" "/AvlTree2" toHome.hoveredDiv
-                , styledDiv "list" "Linked-List" "/LinkedL" toHome.hoveredDiv
+                [ styledDiv "list" "Linked-List" "/LinkedL" toHome.hoveredDiv
                 , secondOption "https://www.scaler.com/topics/images/stack-operations-in-data-structure_thumbnail.webp" "Stack" "/StackL" toHome.hoveredDiv
                 , secondOption "https://talentbattle.in/Files/C4U_Images/C4U_CKEDITOR_IMAGES/IMG10952_IMG10379_Queue1.png" "Queue" "/QueueL" toHome.hoveredDiv
                 , styledDiv "bst" "AVL-Tree" "/AvlTree2" toHome.hoveredDiv
