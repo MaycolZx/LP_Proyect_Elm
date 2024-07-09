@@ -111,7 +111,6 @@ view { router } =
             , H.footer []
                 [ H.div [ HA.style "display" "flex", HA.style "flex-flow" "row wrap", HA.style "justify-content" "space-between", HA.style "padding" "12px 60px", HA.style "margin-top" "20px", HA.style "background-color" "black", HA.style "text-align" "right", HA.style "line-height" "normal", HA.style "color" "white" ]
                     [ H.a [ HA.style "color" "white", HA.style "text-decoration" "none", HA.href "/about" ] [ H.text "About" ]
-                    , H.a [ HA.style "color" "white", HA.style "text-decoration" "none", HA.href "/SecHome" ] [ H.text "Team" ]
                     , H.a [ HA.style "color" "white", HA.style "text-decoration" "none", HA.href "/contact" ] [ H.text "Terms of use" ]
                     , H.a [ HA.style "color" "white", HA.style "text-decoration" "none", HA.href "/SecHome" ] [ H.text "Privacy Policy" ]
                     ]

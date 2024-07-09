@@ -150,7 +150,7 @@ view toHome =
     , main =
         [ H.div []
             -- H.div [ HA.style "display" "grid", HA.style "grid-template-rows" "1fr 5fr 1fr ", HA.style "margin" "20px" ]
-            [ H.h1 [ HA.style "display" "flex", HA.style "justify-content" "center", HA.style "align-items" "center", HA.style "margin-top" "0", HA.style "margin-bottom" "0" ] [ H.text "VISU algo 2.0" ]
+            [ H.h1 [ HA.style "display" "flex", HA.style "justify-content" "center", HA.style "align-items" "center", HA.style "margin-top" "0", HA.style "margin-bottom" "0" ] [ H.text "Visualizador de Estructura de Datos" ]
             , H.div [ HA.style "display" "grid", HA.style "grid-template-columns" "1fr 1fr", HA.style "gap" "20px" ]
                 [ styledDiv "list" "Linked-List" "/LinkedL" toHome.hoveredDiv
                 , secondOption "https://www.scaler.com/topics/images/stack-operations-in-data-structure_thumbnail.webp" "Stack" "/StackL" toHome.hoveredDiv

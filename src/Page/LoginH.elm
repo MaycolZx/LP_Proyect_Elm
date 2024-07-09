@@ -1,11 +1,4 @@
--- module SecHome exposing (main)
-
-
 module Page.LoginH exposing (Model, Msg, init, update, view)
-
--- import Browser
--- import Html exposing (Html, button, div, text)
--- import Html.Events exposing (onClick)
 
 import Html as H
 import Html.Attributes as HA exposing (..)
@@ -18,12 +11,18 @@ import Router exposing (Layout)
 
 
 type alias Model =
-    { message : String }
+    { username : String
+    , password : String
+    , message : String
+    }
 
 
 init : Model
 init =
-    { message = "" }
+    { username = ""
+    , password = ""
+    , message = ""
+    }
 
 
 
@@ -31,7 +30,11 @@ init =
 
 
 type Msg
-    = ButtonClicked
+    = UpdateUsername String
+    | UpdatePassword String
+    | SubmitLogin
+    | LoginSuccess
+    | LoginFailure String
 
 
 
@@ -41,62 +44,47 @@ type Msg
 update : Msg -> Model -> Model
 update msg model =
     case msg of
-        ButtonClicked ->
-            { model | message = "Button was clicked!" }
+        UpdateUsername username ->
+            { model | username = username }
+
+        UpdatePassword password ->
+            { model | password = password }
+
+        SubmitLogin ->
+            if model.username == "admin" && model.password == "password" then
+                { model | message = "Login successful!" }
+
+            else
+                { model | message = "Invalid username or password." }
+
+        LoginSuccess ->
+            { model | message = "Login successful!" }
+
+        LoginFailure errorMsg ->
+            { model | message = errorMsg }
 
 
 
 -- VIEW
--- view : Model -> Html Msg
--- view model =
---     div []
---         [ button [ onClick ButtonClicked ] [ text "Click me" ]
---         , div [] [ text model.message ]
---         ]
--- view : Model -> (Msg -> msg) -> Html msg
--- view model toMsg =
---     div []
---         [ button [ onClick (toMsg ButtonClicked) ] [ text "Click me" ]
---         , div [] [ text model.message ]
---         ]
 
 
 view : Model -> Layout Msg
-view toMsgLog =
+view model =
     { title = Nothing
     , attrs = []
     , main =
         [ H.div []
-            [ H.div []
-                [ H.h1 [ style "color" "red" ] [ H.text "Holaaaa" ]
-                , H.button [ E.onClick ButtonClicked ] [ H.text "Click me" ]
-                , H.div [] [ H.text toMsgLog.message ]
+            [ H.h1 [ style "color" "black" ] [ H.text "Login" ]
+            , H.div []
+                [ H.label [] [ H.text "Username:" ]
+                , H.input [ type_ "text", value model.username, E.onInput UpdateUsername ] []
                 ]
             , H.div []
-                [ H.h2 [ style "color" "green" ] [ H.text "Controles" ]
+                [ H.label [] [ H.text "Password:" ]
+                , H.input [ type_ "password", value model.password, E.onInput UpdatePassword ] []
                 ]
+            , H.button [ E.onClick SubmitLogin ] [ H.text "Login" ]
+            , H.div [] [ H.text model.message ]
             ]
         ]
     }
-
-
-
--- view : Layout msg
--- view =
---     { title = Nothing
---     , attrs = []
---     , main =
---         [ H.div []
---             -- [ H.button [ E.onClick (toMsg ButtonClicked) ] [ text "Click me" ]
---             [ H.button [] [ H.text "Click me" ]
---             , H.div [] [ H.text "HOOOOOOOOOOOo" ]
---             ]
---         ]
---     }
--- main : Program () Model Msg
--- main =
---     Browser.sandbox
---         { init = init
---         , view = view
---         , update = update
---         }
